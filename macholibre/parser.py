@@ -779,14 +779,7 @@ class Parser():
                                  'offset "{}" is not divisible by 4.'.format(
                                     cmd_size, self.__file.tell() - 4))
 
-            if cmd in dictionary.loadcommands:
-                cmd = dictionary.loadcommands[cmd]
-            else:
-                self.add_abnormality('Unknown load command "{}" at offset '
-                                     '"{}".'.format(
-                                         cmd, self.__file.tell() - 8))
-
-                self.__file.read(cmd_size - 8)  # skip load command
+            cmd = dictionary.loadcommands.get(cmd, cmd)
 
             if cmd == 'SEGMENT' or cmd == 'SEGMENT_64':
                 self.__macho['lcs'].append(
@@ -855,6 +848,11 @@ class Parser():
                 self.__macho['lcs'].append(self.parse_rpath(cmd, cmd_size))
             elif cmd == 'MAIN':
                 self.__macho['lcs'].append(self.parse_main(cmd, cmd_size))
+            else:
+                self.add_abnormality('Unknown/unhandled load command "{}" at offset '
+                                     '"{}".'.format(
+                                         cmd, self.__file.tell() - 8))
+                self.__file.read(int(cmd_size-8))
 
     def parse_syms(self, offset, size, lc_symtab):
         """Parse symbol and string tables.
