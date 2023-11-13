@@ -71,6 +71,11 @@ indeces = {
     3: 'ResourceDirSlot',
     4: 'ApplicationSlot',
     5: 'EntitlementSlot',
+    0x1000: 'AlternateCodeDirectory 0',
+    0x1001: 'AlternateCodeDirectory 1',
+    0x1002: 'AlternateCodeDirectory 2',
+    0x1003: 'AlternateCodeDirectory 3',
+    0x1004: 'AlternateCodeDirectory 4',
     0x10000: 'SignatureSlot'
 }
 

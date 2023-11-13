@@ -1167,9 +1167,8 @@ class Parser():
 
         self.__file.seek(prev)
 
-    def parse_codedirectory(self, sig_offset, index_offset):
+    def parse_codedirectory(self, codedir, sig_offset, index_offset):
         """Parse code directory from code signature."""
-
         prev = self.__file.tell()
 
         true_offset = sig_offset + index_offset
@@ -1217,7 +1216,7 @@ class Parser():
 
         identity = self.get_string()
 
-        self.__macho['code_signature']['codedirectory'] = {
+        codedirectory = {
             'size': size,
             'version': version,
             'flags': flags,
@@ -1233,11 +1232,11 @@ class Parser():
         }
 
         if version >= 0x20100:
-            self.__macho['code_signature']['codedirectory']['scatter_offset'] = scatter_offset
+            codedirectory['scatter_offset'] = scatter_offset
         if version >= 0x20200:
-            self.__macho['code_signature']['codedirectory']['platform'] = platform
-            self.__macho['code_signature']['codedirectory']['team_id_offset'] = team_id_offset
-            self.__macho['code_signature']['codedirectory']['team_id'] = team_id
+            codedirectory['platform'] = platform
+            codedirectory['team_id_offset'] = team_id_offset
+            codedirectory['team_id'] = team_id
 
         self.__file.seek(
             true_offset + hash_offset - n_special_slots * hash_size)
@@ -1245,8 +1244,15 @@ class Parser():
         count = n_special_slots + n_code_slots
 
         for _ in range(count):
-            self.__macho['code_signature']['codedirectory']['hashes'].append(
+            codedirectory['hashes'].append(
                 self.__file.read(hash_size).hex())
+
+        if codedir is None:
+            self.__macho['code_signature']['codedirectory'] = codedirectory
+        else:
+            altcodedirs = self.__macho['code_signature'].get('alternate_codedirectories', [None]*5)
+            altcodedirs[codedir] = codedirectory
+            self.__macho['code_signature']['alternate_codedirectories'] = altcodedirs
 
         self.__file.seek(prev)
 
@@ -1582,11 +1588,14 @@ class Parser():
             if index_type == 'SignatureSlot':
                 self.parse_certs(true_offset, index_offset)
             elif index_type == 'CodeDirectorySlot':
-                self.parse_codedirectory(true_offset, index_offset)
+                self.parse_codedirectory(None, true_offset, index_offset)
             elif index_type == 'EntitlementSlot':
                 self.parse_entitlement(true_offset, index_offset)
             elif index_type == 'RequirementsSlot':
                 self.parse_requirements(true_offset, index_offset)
+            elif str(index_type).startswith('AlternateCodeDirectory'):
+                codedir = int(index_type.split()[1])
+                self.parse_codedirectory(codedir, true_offset, index_offset)
 
     def parse_macho(self, offset, size):
         """Parse mach-o binary, possibly contained within a
