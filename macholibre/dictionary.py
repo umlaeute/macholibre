@@ -538,3 +538,16 @@ cputypes = {
         2147483648 + 100: 'POWERPC_970 (LIB64)'
     }
 }
+
+platforms = {
+    1: 'macos',
+    2: 'ios',
+    3: 'tvos',
+    4: 'watchos',
+}
+
+tools = {
+    1: 'clang',
+    2: 'swift',
+    3: 'ld'
+}

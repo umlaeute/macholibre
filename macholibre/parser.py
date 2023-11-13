@@ -700,6 +700,49 @@ class Parser():
 
         return output
 
+    def parse_build_version(self, cmd, cmd_size):
+        """Parse build version load command."""
+
+        offset = self.__file.tell()
+
+        platform = self.get_int()
+        minos = self.get_int()
+        sdk = self.get_int()
+        ntools = self.get_int()
+
+        if platform in dictionary.platforms:
+            platform = dictionary.platforms[platform]
+        else:
+            self.add_abnormality('Unknown PLATFORM "{}" at offset "{}".'.format(
+                                     platform, offset))
+
+        output = {
+            'cmd': cmd,
+            'cmd_size': cmd_size,
+            'platform': platform,
+            'minos': self.make_version(minos),
+            'sdk': self.make_version(sdk),
+        }
+
+        tools = []
+        for t in range(ntools):
+            offset = self.__file.tell()
+            tool = self.get_int()
+            toolversion = self.get_int()
+            if tool in dictionary.tools:
+                tool = dictionary.tools[tool]
+            else:
+                self.add_abnormality('Unknown TOOL "{}" at offset "{}".'.format(
+                                         tool, offset))
+            tools.append({
+                'tool': tool,
+                'version': self.make_version(toolversion),
+            })
+        if tools:
+            output['tools'] = tools
+
+        return output
+
     def parse_linker_option(self, cmd, cmd_size):
         """Parse linker options load command."""
 
@@ -841,6 +884,9 @@ class Parser():
             elif cmd == 'SOURCE_VERSION':
                 self.__macho['lcs'].append(
                     self.parse_source_version(cmd, cmd_size))
+            elif cmd == 'BUILD_VERSION':
+                self.__macho['lcs'].append(
+                    self.parse_build_version(cmd, cmd_size))
             elif cmd == 'LINKER_OPTION':
                 self.__macho['lcs'].append(
                     self.parse_linker_option(cmd, cmd_size))
